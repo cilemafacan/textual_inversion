@@ -20,21 +20,22 @@ class CustomDataset(Dataset):
     
     def __getitem__(self, idx):
         image_caption_pair = self.image_caption_pairs[idx]
-        image = image_caption_pair['image']
+        image_path = image_caption_pair['image']
+        image = Image.open(image_path).convert('RGB')
         caption = image_caption_pair['caption']
-        text_ids = self.tokenizer.encode(caption,
-                                         return_tensors='pt',
-                                         padding='max_length',
-                                         max_length=77,
-                                         truncation=True).input_ids[0]
+        text_ids = self.tokenizer(caption,
+                                  return_tensors='pt',
+                                  padding='max_length',
+                                  max_length=77,
+                                  truncation=True).input_ids[0]
         
         if self.img_padding:
             np_image = np.array(image)
             padded_image = util.padding(np_image)
             image = Image.fromarray(padded_image)
         
-        image.resize((self.resolution, self.resolution))
-
+        image = image.resize((self.resolution, self.resolution))
+        
         if self.transform:
             pixel_values = self.transform(image)
 

@@ -29,6 +29,11 @@ def parse_args():
     return parser.parse_args()
 
 
+def save_progress(text_encoder, 
+                  args):
+        torch.save(text_encoder.state_dict(), os.path.join(args.save_path, 'learned_embeds.bin'))
+
+
 def main():
     args = parse_args()
     if not os.path.exists(args.save_path):
@@ -54,7 +59,7 @@ def main():
                                   weight_decay=args.weight_decay)
     
     num_training_steps = len(train_loader) * args.num_epochs
-    lr_scheduler = get_scheduler(args.scheduler, optimizer, num_warmup_steps=args.num_warmup_steps, num_training_steps=num_training_steps)
+    lr_scheduler = get_scheduler(args.scheduler, optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=num_training_steps)
 
     text_encoder.to(args.device)
     unet.to(args.device)
@@ -67,6 +72,8 @@ def main():
         for batch in train_loader:
             
             img,text = batch[0], batch[1]
+            img = img.to(args.device)
+            text = text.to(args.device)
             latents = vae.encode(img).latent_dist.sample().detach()
             latents = latents * vae.config.scaling_factor
 
@@ -106,6 +113,9 @@ def main():
         logging.info(f"Loss: {loss.item()}")
         logging.info(f"Learning rate: {lr_scheduler.get_last_lr()[0]}")
         start = time.time()
+
+if __name__ == '__main__':
+    main()
 
 
 
